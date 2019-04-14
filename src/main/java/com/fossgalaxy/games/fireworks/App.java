@@ -12,6 +12,7 @@ import com.fossgalaxy.stats.BasicStats;
 import com.fossgalaxy.stats.StatsSummary;
 
 import java.util.Random;
+import java.io.*;
 
 /**
  * Hello world!
@@ -90,12 +91,13 @@ public class App {
         
         // For the purpose of getting training data, game statistics is not needed for now, 
         // so we will be just running the game here and logging the data into a file
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 10000; i++) {
         	long seed = r.nextLong();
-        	playMixed("vdb-paper", "vdb-paper", seed);
+        	playMixed("iggi", "iggi", seed);
         	System.out.print("Done with game number ");
         	System.out.println(i);
         }
+        
 
 //        for (int i=0; i<seeds.length; i++) {
 //            seeds[i] = r.nextLong();

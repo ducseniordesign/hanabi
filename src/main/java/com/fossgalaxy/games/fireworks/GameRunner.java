@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.io.*;
 
 /**
  * A basic runner for the game of Hanabi.
@@ -607,6 +608,13 @@ public class GameRunner {
         			}
         		}
         	}
+            // Random noise for this game, Uniform randomness
+            Random r = new Random();
+            r.setSeed(System.currentTimeMillis() / 1000L);
+            int[] randomNoise = new int[10];
+            for (int i = 0; i < 10; i++) {
+            	randomNoise[i] = r.nextInt(2);
+            }
             while (!state.isGameOver()) {
                 try {
                 	int[] dataPoint = new int[892]; // Array to hold the bits of this data point
@@ -614,6 +622,32 @@ public class GameRunner {
                     basicGameState(state, dataPoint, possibleCards);
                     nextMove();
                     processAction(dataPoint, possibleCards);
+                    // Adding in the random noise - Uniform randomness
+                    for (int i = 882; i < 892; i++) {
+                    	dataPoint[i] = randomNoise[i-882];
+                    }
+                    // Write to file the data point
+                    FileWriter output = null;
+                    try {
+                    	output= new FileWriter("iggi.txt", true);
+                    	BufferedWriter writer=new BufferedWriter(output);
+                    	for (int i = 0; i < 892; i++) {
+                    		String ss = String.valueOf(dataPoint[i]);
+                    		writer.append(ss);
+                    	}
+                    	writer.append(new String("\n")); // New line
+                    	writer.close();
+                    } catch (Exception e) {
+                    	logger.warn("File write error - Can't write");
+                    } finally {
+                    	if (output != null) {
+                    		try {
+                    			output.close();
+                    		} catch (IOException e) {
+                    			logger.warn("File write error - Can't flush and close");
+                    		}
+                    	}
+                    }
                 } catch (RulesViolation rv) {
                     logger.warn("got rules violation when processing move", rv);
                     strikes++;
@@ -625,8 +659,6 @@ public class GameRunner {
                     }
                 }
             }
-            System.out.print("Number of players: ");
-            System.out.println(nPlayers);
             return new GameStats(gameID, players.length, state.getScore(), state.getLives(), moves, state.getInfomation(), strikes);
         } catch (Exception ex) {
             logger.error("the game went bang", ex);
