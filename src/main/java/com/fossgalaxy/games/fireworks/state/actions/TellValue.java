@@ -82,6 +82,14 @@ public class TellValue implements Action {
         return value == tellValue.value;
 
     }
+    
+    public int getPlayer() {
+    	return player;
+    }
+    
+    public int getValue() {
+    	return value;
+    }
 
     @Override
     public int hashCode() {

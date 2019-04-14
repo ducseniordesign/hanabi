@@ -3,6 +3,7 @@ package com.fossgalaxy.games.fireworks;
 import com.fossgalaxy.games.fireworks.ai.AgentPlayer;
 import com.fossgalaxy.games.fireworks.players.Player;
 import com.fossgalaxy.games.fireworks.state.*;
+import com.fossgalaxy.games.fireworks.state.actions.*;
 import com.fossgalaxy.games.fireworks.state.actions.Action;
 import com.fossgalaxy.games.fireworks.state.events.CardDrawn;
 import com.fossgalaxy.games.fireworks.state.events.CardReceived;
@@ -10,6 +11,8 @@ import com.fossgalaxy.games.fireworks.state.events.GameEvent;
 import com.fossgalaxy.games.fireworks.state.events.GameInformation;
 import com.fossgalaxy.games.fireworks.utils.AgentUtils;
 import com.fossgalaxy.games.fireworks.utils.DebugUtils;
+import com.fossgalaxy.games.fireworks.state.CardColour;
+import com.fossgalaxy.games.fireworks.state.Card;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,6 +37,10 @@ public class GameRunner {
     private int moves;
 
     private int nextPlayer;
+    
+    private Action lastAction;
+    private int lastPlayer;
+    private GameState lastState;
 
     /**
      * Create a game runner with a given ID and a number of players.
@@ -163,7 +170,7 @@ public class GameRunner {
 
     //TODO find a better way of doing this logging.
     protected void writeState(GameState state) {
-        DebugUtils.printState(logger, state);
+        DebugUtils.printState(logger, state);        
     }
 
     private long getTick() {
@@ -201,9 +208,376 @@ public class GameRunner {
 
         Collection<GameEvent> events = action.apply(nextPlayer, state);
         notifyAction(nextPlayer, action, events);
+        
+        // Save the information of the action and the player for further processing
+        lastAction = action;
+        lastPlayer = nextPlayer;
+        lastState = state.getCopy();
 
         //make sure it's the next player's turn
         nextPlayer = (nextPlayer + 1) % players.length;
+    }
+    
+    private void getCardsPlayed(int[] dataPoint, int begin, int end, CardColour colour) {
+    	int cardsPlayed = state.getTableValue(colour);
+    	for (int i = begin; i <= end; i++) {
+    		// Not necessary since this should all be 0 by default, but just to be safe
+    		dataPoint[i] = 0; 
+    	}
+    	dataPoint[begin + cardsPlayed] = 1;
+    }
+    
+    private void vectorizedDiscards (int[] dataPoint, int begin, int[] discarded) {
+    	// This step isn't really necessary, but just to be safe
+    	for (int i = begin; i < begin + 10; i++) {
+    		dataPoint[i] = 0;
+    	}
+    	
+    	// The value 1 of this color
+    	if (discarded[1] >= 1) dataPoint[begin] = 1;
+    	if (discarded[1] >= 2) dataPoint[begin + 1] = 1;
+    	if (discarded[1] >= 3) dataPoint[begin + 2] = 1;
+    	
+    	// The value 2 of this color
+    	if (discarded[2] >= 1) dataPoint[begin + 3] = 1;
+    	if (discarded[2] >= 2) dataPoint[begin + 4] = 1;
+    	
+    	// The value 3 of this color
+    	if (discarded[3] >= 1) dataPoint[begin + 5] = 1;
+    	if (discarded[3] >= 2) dataPoint[begin + 6] = 1;
+    	
+    	// The value 4 of this color 
+    	if (discarded[4] >= 1) dataPoint[begin + 7] = 1;
+    	if (discarded[4] >= 2) dataPoint[begin + 8] = 1;
+    	
+    	// The value 5 of this color
+    	if (discarded[5] >= 1) dataPoint[begin + 9] = 1;
+    }
+    
+    private void getDiscardedCards(int[] dataPoint) {
+    	Collection<Card> discarded = state.getDiscards();
+    	// Storing the values of discarded
+    	int[] redDiscards = new int[6];
+    	int[] orangeDiscards = new int[6];
+    	int[] greenDiscards = new int[6];
+    	int[] whiteDiscards = new int[6];
+    	int[] blueDiscards = new int[6];
+    	// Count the discards of each color
+    	for (Card card : discarded) {
+    		int val = card.value;
+    		if (card.colour == CardColour.RED) {
+    			redDiscards[val]++;
+    		}
+    		if (card.colour == CardColour.ORANGE) {
+    			orangeDiscards[val]++;
+    		}
+    		if (card.colour == CardColour.GREEN) {
+    			greenDiscards[val]++;
+    		}
+    		if (card.colour == CardColour.WHITE) {
+    			whiteDiscards[val]++;
+    		}
+    		if (card.colour == CardColour.BLUE) {
+    			blueDiscards[val]++;
+    		}
+    	}
+    	// Now that we have the discard count, we can put this info in the data point vector
+    	vectorizedDiscards(dataPoint, 79, redDiscards);
+    	vectorizedDiscards(dataPoint, 89, orangeDiscards);
+    	vectorizedDiscards(dataPoint, 99, greenDiscards);
+    	vectorizedDiscards(dataPoint, 109, whiteDiscards);
+    	vectorizedDiscards(dataPoint, 119, blueDiscards);
+    }
+    
+    private void vectorizeObservedCard (Hand hand, int cardPos, int begin, int[] dataPoint) {
+    	Card card = hand.getCard(cardPos);
+    	if (card == null) return;
+    	if (card.colour == CardColour.RED) {
+			dataPoint[begin + card.value - 1] = 1;
+		}
+		if (card.colour == CardColour.ORANGE) {
+			dataPoint[begin + 5 + card.value - 1] = 1;
+		}
+		if (card.colour == CardColour.GREEN) {
+			dataPoint[begin + 10 + card.value - 1] = 1;
+		}
+		if (card.colour == CardColour.WHITE) {
+			dataPoint[begin + 15 + card.value - 1] = 1;
+		}
+		if (card.colour == CardColour.BLUE) {
+			dataPoint[begin + 20 + card.value - 1] = 1;
+		}
+    }
+    
+    private void getObservedCard (int playerID, int begin, int[] dataPoint) {
+    	Hand hand = state.getHand(playerID);
+    	// Zero out data point vector
+    	for (int i = begin; i < begin + 100; i++) {
+    		dataPoint[i] = 0;
+    	}
+    	// Vectorize the cards
+    	vectorizeObservedCard(hand, 0, begin, dataPoint);
+    	vectorizeObservedCard(hand, 1, begin + 25, dataPoint);
+    	vectorizeObservedCard(hand, 2, begin + 50, dataPoint);
+    	vectorizeObservedCard(hand, 3, begin + 75, dataPoint);
+    }
+    
+    
+    
+    /**
+     * Separate function to vectorize the basic game state.
+     * <p>
+     * We don't use writeState() as to maintain the usability of that function for other
+     * functions in the framework
+     *
+     */
+    private void basicGameState(GameState state, int[] dataPoint, int[][][][] possibleCards) {
+    	// Lives left - Bits 0 to 3
+    	int lives = state.getLives();
+    	for (int i = 0; i < 4; i++) {
+    		if (i <= lives) {
+    			dataPoint[i] = 1;
+    		} else {
+    			dataPoint[i] = 0;
+    		}
+    	}
+    	// Hints left - Bits 5 to 13
+    	int hints = state.getInfomation();
+    	for (int i = 0; i < 9; i++) {
+    		if (i <= hints) {
+    			dataPoint[5 + i] = 1;
+    		} else {
+    			dataPoint[5 + i] = 0;
+    		}
+    	}
+    	// Deck size remaining - Bits 14 to 48
+    	int deckSize = state.getDeck().getCardsLeft();
+    	for (int i = 0; i < 35; i++) {
+    		if (i <= deckSize) {
+    			dataPoint[14 + i] = 1;
+    		} else {
+    			dataPoint[14 + i] = 0;
+    		}
+    	}
+    	
+    	// Red cards played on table - Bits 49 to 54
+    	getCardsPlayed(dataPoint, 49, 54, CardColour.RED);
+    	// Orange cards played on table - Bits 55 to 60
+    	getCardsPlayed(dataPoint, 55, 60, CardColour.ORANGE);
+    	// Green cards played on table - Bits 61 to 66
+    	getCardsPlayed(dataPoint, 61, 66, CardColour.GREEN);
+    	// White cards played on table - Bits 67 to 72
+    	getCardsPlayed(dataPoint, 67, 72, CardColour.WHITE);
+    	// Blue cards played on table - Bits 73 to 78
+    	getCardsPlayed(dataPoint, 73, 78, CardColour.BLUE);
+    	
+    	// Get discarded cards
+    	getDiscardedCards(dataPoint);
+    	
+    	// Get observed cards of other players
+    	getObservedCard((nextPlayer + 1) % players.length, 129, dataPoint);
+    	getObservedCard((nextPlayer + 2) % players.length, 229, dataPoint);
+    	getObservedCard((nextPlayer + 3) % players.length, 329, dataPoint);
+    	
+    	// Push the possible cards vector onto the data point as well
+    	int curr = 429;
+    	for (int player = 0; player < 4; player++) {
+    		for (int card = 0; card < 4; card++) {
+    			for (int colour = 0; colour < 5; colour++) {
+    				for (int value = 1; value < 6; value++) {
+    					dataPoint[curr] = possibleCards[player][card][colour][value];
+        				curr++;
+    				}
+    			}
+    		}
+    	}
+    	
+    	// Done with the game state representation, the rest will be action representation
+    	return;
+    	
+    }
+    
+    private int colourToNumber(CardColour colour) {
+    	// Convert a colour into a number, for ease of calculation later on
+    	if (colour == CardColour.RED) return 0; 
+    	if (colour == CardColour.ORANGE) return 1; 
+    	if (colour == CardColour.GREEN) return 2;
+    	if (colour == CardColour.WHITE) return 3; 
+    	return 4;
+    }
+    
+    private void processPlayAction(int[] dataPoints, int[][][][] possibleCards) {
+    	for (int i = 829; i < 881; i++) {
+    		dataPoints[i] = 0;
+    	}
+    	dataPoints[829 + 4] = 1; // This bit is on because we're playing cards
+    	int playSlot = lastAction.hashCode(); // This returns the card slot played
+    	dataPoints[829 + 18 + playSlot] = 1; // This bit on to know which card was played
+    	// Because we drew a new card, we need to update the possible card field
+    	for (int colour = 0; colour < 5; colour++) {
+    		for (int value = 1; value < 6; value++) {
+    			possibleCards[lastPlayer][playSlot][colour][value] = 1;
+    		}
+    	}
+    	// Now process the outcome bits
+    	Card playedCard = lastState.getCardAt(lastPlayer, playSlot);
+    	if (playedCard != null) {
+    		int cardColour = colourToNumber(playedCard.colour);
+    		int cardValue = playedCard.value;
+    		// We played this card
+    		dataPoints[851 + 4 + cardColour * 5 + cardValue - 1] = 1;
+    		dataPoints[851 + 29] = 1; // All our agents for now only make legal moves
+    		if (lastState.getInfomation() + 1 == state.getInfomation()) {
+    			// We gained a hint through the last play action
+    			dataPoints[851 + 30] = 1;
+    		}
+    	}
+    }
+    
+    private void processDiscardAction(int[] dataPoints, int[][][][] possibleCards) {
+    	for (int i = 829; i < 881; i++) {
+    		dataPoints[i] = 0;
+    	}
+    	dataPoints[829 + 4 + 1] = 1; // This bit is on because we're discarding cards
+    	int playSlot = lastAction.hashCode(); // This returns the card slot played
+    	dataPoints[829 + 18 + playSlot] = 1; // This bit on to know which card was played
+    	// Because we drew a new card, we need to update the possible card field
+    	for (int colour = 0; colour < 5; colour++) {
+    		for (int value = 1; value < 6; value++) {
+    			possibleCards[lastPlayer][playSlot][colour][value] = 1;
+    		}
+    	}
+    	// Now process the outcome bits
+    	Card discardedCard = lastState.getCardAt(lastPlayer, playSlot);
+    	if (discardedCard != null) {
+    		int cardColour = colourToNumber(discardedCard.colour);
+    		int cardValue = discardedCard.value;
+    		// We played this card
+    		dataPoints[851 + 4 + cardColour * 5 + cardValue - 1] = 1;
+    		dataPoints[851 + 29] = 1; // All our agents for now only make legal moves
+    	}
+    }
+    
+    private void processTellColour(int[] dataPoints, int[][][][] possibleCards) {
+    	for (int i = 829; i < 881; i++) {
+    		dataPoints[i] = 0;
+    	}
+    	
+    	TellColour act = (TellColour)lastAction; // Should not fail because we did the checking
+    	int targetPlayerAbsolute = act.getPlayer();
+    	// This target player is absolute in relation to the game, we must change it to be 
+    	// relative to our player
+    	int targetPlayer = targetPlayerAbsolute;
+    	targetPlayer -= lastPlayer;
+    	if (targetPlayer < 0) targetPlayer += 4;
+    	dataPoints[829 + targetPlayer] = 1;
+    	
+    	dataPoints[829 + 4 + 2] = 1; // This bit is on because we're hinting colors
+    	CardColour colour = act.getColour();
+    	int colourNum = colourToNumber(colour);
+    	dataPoints[829 + 8 + colourNum] = 1;
+    	
+    	
+    	// Update the possible cards for the player receiving the hint
+    	Hand hand = lastState.getHand(targetPlayerAbsolute);
+    	for (int i = 0; i < 4; i++) {
+    		// For each of the card
+    		Card card = hand.getCard(i);
+    		if (card == null) continue;
+    		int cardColour = colourToNumber(card.colour);
+    		if (cardColour == colourNum) {
+    			// This card was hinted, no color but this one is possible
+    			for (int possibleColour = 0; possibleColour < 5; possibleColour++) {
+    				if (possibleColour != cardColour) {
+    					for (int value = 1; value < 6; value++) {
+    						possibleCards[targetPlayerAbsolute][i][possibleColour][value] = 0;
+    					}
+    				}
+    			}
+    			// Also flag this card as hinted in the outcome bits
+    			dataPoints[851 + i] = 1;
+    		} else {
+    			// This card was not hinted, eleminate this color
+    			for (int value = 1; value < 6; value++) {
+    				possibleCards[targetPlayerAbsolute][i][colourNum][value] = 0;
+    			}
+    		}
+    	}
+    	
+    	// Our agents only play legal actions
+    	dataPoints[851 + 29] = 1;
+    }
+    
+    private void processTellValue(int[] dataPoints, int[][][][] possibleCards) {
+    	for (int i = 829; i < 881; i++) {
+    		dataPoints[i] = 0;
+    	}
+    	
+    	TellValue act = (TellValue)lastAction; // Should not fail because we did the checking
+    	int targetPlayerAbsolute = act.getPlayer();
+    	// This target player is absolute in relation to the game, we must change it to be 
+    	// relative to our player
+    	int targetPlayer = targetPlayerAbsolute;
+    	targetPlayer -= lastPlayer;
+    	if (targetPlayer < 0) targetPlayer += 4;
+    	dataPoints[829 + targetPlayer] = 1;
+    	
+    	dataPoints[829 + 4 + 3] = 1; // This bit is on because we're hinting colors
+    	int value = act.getValue();
+    	dataPoints[829 + 13 + value - 1] = 1;
+    	
+    	
+    	// Update the possible cards for the player receiving the hint
+    	Hand hand = lastState.getHand(targetPlayerAbsolute);
+    	for (int i = 0; i < 4; i++) {
+    		// For each of the card
+    		Card card = hand.getCard(i);
+    		if (card == null) continue;
+    		int cardValue = card.value;
+    		if (cardValue == value) {
+    			// This card was hinted, no value but this one is possible
+    			for (int colour = 0; colour < 5; colour++) {
+    				for (int possibleValue = 1; possibleValue < 6; possibleValue++) {
+    					if (possibleValue != value) {
+    						possibleCards[targetPlayerAbsolute][i][colour][possibleValue] = 0;
+    					}
+    				}
+    			}
+    			// Also flag this card as hinted in the outcome bits
+    			dataPoints[851 + i] = 1;
+    		} else {
+    			// This card was not hinted, eleminate this color
+    			for (int colour = 0; colour < 5; colour++) {
+    				possibleCards[targetPlayerAbsolute][i][colour][value] = 0;
+    			}
+    		}
+    	}
+    	
+    	// Our agents only play legal actions
+    	dataPoints[851 + 29] = 1;
+    }
+    
+    /**
+     * Process the last action made and vectorize the data. 
+     * Also change the possible cards for each player
+     */
+    private void processAction(int[] dataPoints, int[][][][] possibleCards) {
+    	if (lastAction instanceof PlayCard) {
+    		// If the last action was playing a card
+    		processPlayAction(dataPoints, possibleCards);
+    	}
+    	if (lastAction instanceof DiscardCard) {
+    		// If the last action was discarding a card
+    		processDiscardAction(dataPoints, possibleCards);
+    	}
+    	if (lastAction instanceof TellColour) {
+    		// If the last action was hinting a colour
+    		processTellColour(dataPoints, possibleCards);
+    	}
+    	if (lastAction instanceof TellValue) {
+    		// If the last action was hinting a value
+    		processTellValue(dataPoints, possibleCards);
+    	}
     }
 
     /**
@@ -220,11 +594,26 @@ public class GameRunner {
         try {
             assert nPlayers == players.length;
             init(seed);
-
+            // Possible cards as perceived by each player
+            // 4 players, 4 cards each player, 25 values each card (5x5)
+            int[][][][] possibleCards = new int[4][4][5][6];
+            // In the beginning, everything is possible for all players
+            for (int player = 0; player < 4; player++) {
+        		for (int card = 0; card < 4; card++) {
+        			for (int colour = 0; colour < 5; colour++) {
+        				for (int value = 1; value < 6; value++) {
+        					possibleCards[player][card][colour][value] = 1;
+        				}
+        			}
+        		}
+        	}
             while (!state.isGameOver()) {
                 try {
+                	int[] dataPoint = new int[892]; // Array to hold the bits of this data point
                     writeState(state);
+                    basicGameState(state, dataPoint, possibleCards);
                     nextMove();
+                    processAction(dataPoint, possibleCards);
                 } catch (RulesViolation rv) {
                     logger.warn("got rules violation when processing move", rv);
                     strikes++;
@@ -236,6 +625,8 @@ public class GameRunner {
                     }
                 }
             }
+            System.out.print("Number of players: ");
+            System.out.println(nPlayers);
             return new GameStats(gameID, players.length, state.getScore(), state.getLives(), moves, state.getInfomation(), strikes);
         } catch (Exception ex) {
             logger.error("the game went bang", ex);

@@ -87,33 +87,43 @@ public class App {
                 ss[j][i] = new BasicStats();
             }
         }
-
-        for (int i=0; i<seeds.length; i++) {
-            seeds[i] = r.nextLong();
+        
+        // For the purpose of getting training data, game statistics is not needed for now, 
+        // so we will be just running the game here and logging the data into a file
+        for (int i = 0; i < 100; i++) {
+        	long seed = r.nextLong();
+        	playMixed("vdb-paper", "vdb-paper", seed);
+        	System.out.print("Done with game number ");
+        	System.out.println(i);
         }
 
-        for (int agent=0; agent<agents.length; agent++) {
-            for (int i = 0; i < p.length; i++) {
-
-                for (int run = 0; run < seeds.length; run++) {
-                    GameStats stats = playMixed("mctsExpConstND["+p[i]+"]", agents[agent], seeds[i]);
-                    sum += stats.score;
-                    games++;
-                    ss[agent][i].add(stats.score);
-                    System.out.println(String.format("line,%f,%s,%d,%d,%d,%d,%d", p[i], agents[agent], seeds[i], stats.score, stats.lives, stats.moves, stats.disqal));
-                }
-
-                if (games == 0) {
-                    return;
-                }
-
-                System.out.println("exp: " + p[i] + "avg: " + sum / games);
-                System.out.println("exp: " + p[i] + " stats: " + ss[i]);
-
-                StatsSummary ssi = ss[agent][i];
-                System.out.println(String.format("summary,%f,%s,%f,%f,%f,%f", p[i], agents[agent], ssi.getMin(), ssi.getMax(), ssi.getMean(), ssi.getRange()));
-            }
-        }
+//        for (int i=0; i<seeds.length; i++) {
+//            seeds[i] = r.nextLong();
+//        }
+//
+//        for (int agent=0; agent<agents.length; agent++) {
+//            for (int i = 0; i < p.length; i++) {
+//
+//                for (int run = 0; run < seeds.length; run++) {
+//                    GameStats stats = playMixed("mctsExpConstND["+p[i]+"]", agents[agent], seeds[i]);
+//                	//GameStats stats = playMixed("legal_random", agents[agent], seeds[i]);
+//                    sum += stats.score;
+//                    games++;
+//                    ss[agent][i].add(stats.score);
+//                    System.out.println(String.format("line,%f,%s,%d,%d,%d,%d,%d", p[i], agents[agent], seeds[i], stats.score, stats.lives, stats.moves, stats.disqal));
+//                }
+//
+//                if (games == 0) {
+//                    return;
+//                }
+//
+//                System.out.println("exp: " + p[i] + "avg: " + sum / games);
+//                System.out.println("exp: " + p[i] + " stats: " + ss[i]);
+//
+//                StatsSummary ssi = ss[agent][i];
+//                System.out.println(String.format("summary,%f,%s,%f,%f,%f,%f", p[i], agents[agent], ssi.getMin(), ssi.getMax(), ssi.getMean(), ssi.getRange()));
+//            }
+//        }
     }
 
     /**
@@ -146,14 +156,14 @@ public class App {
      */
     public static GameStats playMixed(String agentUnderTest, String agent, long seed) {
         Random r = new Random(seed);
-        int whereToPlace = r.nextInt(5);
+        int whereToPlace = r.nextInt(4);
 
-        String[] names = new String[5];
+        String[] names = new String[4];
         for (int i = 0; i < names.length; i++) {
             names[i] = whereToPlace == i ? agentUnderTest : agent;
         }
 
-        Agent[] players = new Agent[5];
+        Agent[] players = new Agent[4];
         for (int i = 0; i < names.length; i++) {
             players[i] = buildAgent(names[i], i, agent, names.length);
         }

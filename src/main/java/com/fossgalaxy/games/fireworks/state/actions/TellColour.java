@@ -76,6 +76,14 @@ public class TellColour implements Action {
         return colour == that.colour;
 
     }
+    
+    public int getPlayer() {
+    	return player;
+    }
+    
+    public CardColour getColour() {
+    	return colour;
+    }
 
     @Override
     public int hashCode() {
