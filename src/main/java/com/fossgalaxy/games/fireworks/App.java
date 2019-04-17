@@ -93,7 +93,7 @@ public class App {
         // so we will be just running the game here and logging the data into a file
         for (int i = 0; i < 10000; i++) {
         	long seed = r.nextLong();
-        	playMixed("iggi", "iggi", seed);
+        	playMixed("vdb-paper", "vdb-paper", seed);
         	System.out.print("Done with game number ");
         	System.out.println(i);
         }
@@ -158,14 +158,14 @@ public class App {
      */
     public static GameStats playMixed(String agentUnderTest, String agent, long seed) {
         Random r = new Random(seed);
-        int whereToPlace = r.nextInt(4);
+        int whereToPlace = r.nextInt(2);
 
-        String[] names = new String[4];
+        String[] names = new String[2];
         for (int i = 0; i < names.length; i++) {
             names[i] = whereToPlace == i ? agentUnderTest : agent;
         }
 
-        Agent[] players = new Agent[4];
+        Agent[] players = new Agent[2];
         for (int i = 0; i < names.length; i++) {
             players[i] = buildAgent(names[i], i, agent, names.length);
         }
