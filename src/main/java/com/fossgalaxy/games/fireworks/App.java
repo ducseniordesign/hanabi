@@ -5,6 +5,7 @@ import com.fossgalaxy.games.fireworks.ai.iggi.IGGIFactory;
 import com.fossgalaxy.games.fireworks.ai.mcts.MCTS;
 import com.fossgalaxy.games.fireworks.ai.mcts.MCTSNode;
 import com.fossgalaxy.games.fireworks.ai.mcts.MCTSPredictor;
+import com.fossgalaxy.games.fireworks.ai.ganabi.Ganabi;
 import com.fossgalaxy.games.fireworks.utils.AgentUtils;
 import com.fossgalaxy.games.fireworks.utils.GameUtils;
 import com.fossgalaxy.games.fireworks.utils.SetupUtils;
@@ -23,6 +24,7 @@ public class App {
     public static final String IGGI_RISKY = "iggi_risky";
     public static final String MCTS = "mcts";
     public static final String PREDICTOR_MCTSND = "pmctsND";
+    public static final String GANABI = "ganabi";
 
     //utility class - don't create instances of it
     private App() {
@@ -43,7 +45,7 @@ public class App {
         Random r = new Random();
 
         String[] agents = new String[] {
-            "iggi", "piers", "flawed", "outer", "vdb-paper", "legal_random"
+            "iggi", "piers", "flawed", "outer", "vdb-paper", "legal_random",
         };
 
         long[] seeds = new long[100];
@@ -91,9 +93,9 @@ public class App {
         
         // For the purpose of getting training data, game statistics is not needed for now, 
         // so we will be just running the game here and logging the data into a file
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 1; i++) {
         	long seed = r.nextLong();
-        	playMixed("vdb-paper", "vdb-paper", seed);
+        	playMixed("ganabi", "ganabi", seed);
         	System.out.print("Done with game number ");
         	System.out.println(i);
         }
@@ -193,6 +195,8 @@ public class App {
                     return new MCTSPredictor(agents, 50_000, 100, 100);
                 }
                 return new MCTSPredictor(agents);
+            case GANABI:
+            	return new Ganabi();
             default:
                 return AgentUtils.buildAgent(name);
         }
@@ -215,6 +219,8 @@ public class App {
                     return new MCTSPredictor(agents, 50_000, 100, 100);
                 }
                 return new MCTSPredictor(agents);
+            case GANABI:
+            	return new Ganabi();
             default:
                 return AgentUtils.buildAgent(name);
         }
@@ -234,6 +240,8 @@ public class App {
                     return new MCTSPredictor(agents, 50_000, 100, 100);
                 }
                 return new MCTSPredictor(agents);
+            case GANABI:
+            	return new Ganabi();
             default:
                 return AgentUtils.buildAgent(name);
         }

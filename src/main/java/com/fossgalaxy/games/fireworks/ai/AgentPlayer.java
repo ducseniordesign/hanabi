@@ -90,6 +90,10 @@ public class AgentPlayer implements Player {
     public String getName() {
         return name;
     }
+    
+    public Agent getPolicy() {
+    	return policy;
+    }
 
     @Override
     public String toString() {

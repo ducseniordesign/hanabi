@@ -1,6 +1,8 @@
 package com.fossgalaxy.games.fireworks;
 
 import com.fossgalaxy.games.fireworks.ai.AgentPlayer;
+import com.fossgalaxy.games.fireworks.ai.Agent;
+import com.fossgalaxy.games.fireworks.ai.ganabi.Ganabi;
 import com.fossgalaxy.games.fireworks.players.Player;
 import com.fossgalaxy.games.fireworks.state.*;
 import com.fossgalaxy.games.fireworks.state.actions.*;
@@ -42,6 +44,7 @@ public class GameRunner {
     private Action lastAction;
     private int lastPlayer;
     private GameState lastState;
+    private int[] ganabiAgentInput;
 
     /**
      * Create a game runner with a given ID and a number of players.
@@ -183,7 +186,7 @@ public class GameRunner {
     /**
      * Ask the next player for their move.
      */
-    protected void nextMove() {
+    protected void nextMove() throws IOException {
         Player player = players[nextPlayer];
         assert player != null : "that player is not valid";
 
@@ -192,6 +195,16 @@ public class GameRunner {
 
         //get the action and try to apply it
         Action action = player.getAction();
+        
+        // If this agent is the Ganabi agent 
+        if (player instanceof AgentPlayer) {
+        	AgentPlayer agentPlayer = (AgentPlayer)player;
+        	Agent agent = agentPlayer.getPolicy();
+        	if (agent instanceof Ganabi) {
+        		Ganabi ganabiAgent = (Ganabi)agent;
+        		action = ganabiAgent.doPythonMove(nextPlayer, ganabiAgentInput);
+        	}
+        }
 
         long endTime = getTick();
         logger.debug("agent {} took {} ms to make their move", nextPlayer, endTime - startTime);
@@ -664,32 +677,37 @@ public class GameRunner {
                     // Process the action last made by the previous agent
                     processAction(dataPoint, possibleCards, true, false, 510);
                     // Adding in the random noise - Uniform randomness
-                    for (int i = 562; i < 571; i++) {
+                    for (int i = 562; i < 572; i++) {
                     	dataPoint[i] = randomNoise[i-562];
+                    }
+                    // Set up the input for the Ganabi agent
+                    ganabiAgentInput = new int[571];
+                    for (int i = 0; i < 571; i++) {
+                    	ganabiAgentInput[i] = dataPoint[i];
                     }
                     nextMove();
                     processAction(dataPoint, possibleCards, false, true, 572);
                     // Write to file the data point
-                    FileWriter output = null;
-                    try {
-                    	output= new FileWriter("vdb-paper.txt", true);
-                    	BufferedWriter writer=new BufferedWriter(output);
-                    	for (int i = 0; i < 592; i++) {
-                    		String ss = String.valueOf(dataPoint[i]);
-                    		writer.append(ss);
-                    	}
-                    	writer.close();
-                    } catch (Exception e) {
-                    	logger.warn("File write error - Can't write");
-                    } finally {
-                    	if (output != null) {
-                    		try {
-                    			output.close();
-                    		} catch (IOException e) {
-                    			logger.warn("File write error - Can't flush and close");
-                    		}
-                    	}
-                    }
+//                    FileWriter output = null;
+//                    try {
+//                    	output= new FileWriter("flatmc.txt", true);
+//                    	BufferedWriter writer=new BufferedWriter(output);
+//                    	for (int i = 0; i < 592; i++) {
+//                    		String ss = String.valueOf(dataPoint[i]);
+//                    		writer.append(ss);
+//                    	}
+//                    	writer.close();
+//                    } catch (Exception e) {
+//                    	logger.warn("File write error - Can't write");
+//                    } finally {
+//                    	if (output != null) {
+//                    		try {
+//                    			output.close();
+//                    		} catch (IOException e) {
+//                    			logger.warn("File write error - Can't flush and close");
+//                    		}
+//                    	}
+//                    }
                 } catch (RulesViolation rv) {
                     logger.warn("got rules violation when processing move", rv);
                     strikes++;
@@ -702,26 +720,26 @@ public class GameRunner {
                 }
             }
             // Append a delimiter line
-            FileWriter output = null;
-            try {
-            	output= new FileWriter("vdb-paper.txt", true);
-            	BufferedWriter writer=new BufferedWriter(output);
-            	for (int i = 0; i < 592; i++) {
-            		String ss = "-";
-            		writer.append(ss);
-            	}
-            	writer.close();
-            } catch (Exception e) {
-            	logger.warn("File write error - Can't write");
-            } finally {
-            	if (output != null) {
-            		try {
-            			output.close();
-            		} catch (IOException e) {
-            			logger.warn("File write error - Can't flush and close");
-            		}
-            	}
-            }
+//            FileWriter output = null;
+//            try {
+//            	output= new FileWriter("flatmc.txt", true);
+//            	BufferedWriter writer=new BufferedWriter(output);
+//            	for (int i = 0; i < 592; i++) {
+//            		String ss = "-";
+//            		writer.append(ss);
+//            	}
+//            	writer.close();
+//            } catch (Exception e) {
+//            	logger.warn("File write error - Can't write");
+//            } finally {
+//            	if (output != null) {
+//            		try {
+//            			output.close();
+//            		} catch (IOException e) {
+//            			logger.warn("File write error - Can't flush and close");
+//            		}
+//            	}
+//            }
             return new GameStats(gameID, players.length, state.getScore(), state.getLives(), moves, state.getInfomation(), strikes);
         } catch (Exception ex) {
             logger.error("the game went bang", ex);

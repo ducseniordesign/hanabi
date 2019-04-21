@@ -7,6 +7,9 @@ import com.fossgalaxy.games.fireworks.players.Player;
 import com.fossgalaxy.games.fireworks.utils.AgentUtils;
 
 import java.util.UUID;
+import java.util.*;
+import java.io.*;
+
 
 /**
  * Created by piers on 23/03/17.
@@ -37,12 +40,12 @@ class FirstMoveGameRunner extends GameRunner {
         super(gameID, expectedPlayers);
     }
 
-    @Override
-    public GameStats playGame(Long seed) {
-        init(seed);
-        //state.tick();
-        nextMove();
-
-        return null;
-    }
+//    @Override
+//    public GameStats playGame(Long seed) {
+//        init(seed);
+//        //state.tick();
+//        nextMove();
+//
+//        return null;
+//    }
 }
