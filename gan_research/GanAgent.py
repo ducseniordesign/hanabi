@@ -2,20 +2,15 @@
 import keras
 import math
 import numpy as np
-import pandas as pd
 from keras.models import Sequential
 from keras.layers import Dense, Activation
-import sys
 
-for line in sys.stdin:
-    data = list(map(int, line[1:-1].split(",")))
-    data = np.array((data)).reshape(1,571)
+# receive 571 '1's or '0's on stdin
+# print 20 '1's or '0's on stdout
 
-modelfile = "GanAgentModel.h5"
-model = keras.models.load_model(modelfile)
+data = np.array([ord(bit)-48 for bit in input()]).reshape(1,571)
+model = keras.models.load_model("GanAgentModel.h5")
 action = model.predict(data)
-#print(action)
-for val in np.nditer(action):
-    print(val)
-
-
+quantized = [0] * action.shape[1]
+quantized[max(enumerate(action[0]), key=lambda x: x[1])[0]] = 1
+print("".join([chr(bit+48) for bit in quantized]))
