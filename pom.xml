@@ -12,7 +12,7 @@
     <properties>
         <fossgalaxy.owner.id>iggi</fossgalaxy.owner.id>
         <fossgalaxy.repo.id>hanabi</fossgalaxy.repo.id>
-        <mainclass>com.fossgalaxy.games.fireworks.App</mainclass>
+				<mainclass>com.fossgalaxy.games.fireworks.cluster.PredictorRunnerSingle</mainclass>
     </properties>
 
     <scm>
