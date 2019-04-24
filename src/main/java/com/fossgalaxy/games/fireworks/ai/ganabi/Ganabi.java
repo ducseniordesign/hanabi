@@ -10,6 +10,14 @@ import java.io.*;
 
 public class Ganabi implements Agent {
 
+	ProcessBuilder pb;
+
+	public Ganabi() {
+		this.pb = new ProcessBuilder();
+		pb.command("python", "GanAgent.py");
+		pb.directory(new File("./gan_research/"));
+	}
+
 	/**
 	 * Standardised interface for game playing agents.
 	 * <p>
@@ -25,49 +33,46 @@ public class Ganabi implements Agent {
 	}
 
 	public Action doPythonMove(int agentID, int[] input) throws IOException {
-		String arg = Arrays.toString(input);
-		ProcessBuilder pb = new ProcessBuilder("Python", "GanAgent.py");
-		pb.directory(new File("/Users/ducpham/Desktop/"));
-		Process p = pb.start();
+		StringBuilder builder = new StringBuilder();
+		for (int bit : input) {
+				builder.append(bit == 0 ? '0' : '1');
+		}
+		String arg = builder.toString();
+		Process p = this.pb.start();
 		BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(p.getOutputStream()));
+		BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
 		bw.write(arg);
 		bw.flush();
 		bw.close();
-		BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
-		String s = null;
-		int counter = 0, maxLoc = 0;
-		float maxVal = -1;
-		while ((s = stdInput.readLine()) != null && counter < 20) {
-			//System.out.println(s);
-			float val = Float.valueOf(s.trim()).floatValue();
-			if (val > maxVal) {
-				maxVal = val;
-				maxLoc = counter;
-			}
-			counter++;
-		}
+		String action = br.readLine();
 		p.destroy();
-		
+		int hot = 0;
+		for (int i = 0 ; i < action.length() ; i++) {
+			if (action.charAt(i) == '1') {
+				hot = i;
+				break;
+			}
+		}
 		// Determine which action to do
-		if (maxLoc < 5) {
+		if (hot < 5) {
 			// Playing a card
-			return new PlayCard(maxLoc);
-		} else if (maxLoc < 10) {
+			return new PlayCard(hot);
+		} else if (hot < 10) {
 			// Discard a card
-			return new DiscardCard(maxLoc - 5);
-		} else if (maxLoc < 15) {
+			return new DiscardCard(hot - 5);
+		} else if (hot < 15) {
 			CardColour whichColor = CardColour.RED;
-			if (maxLoc == 11)
+			if (hot == 11)
 				whichColor = CardColour.ORANGE;
-			if (maxLoc == 12)
+			if (hot == 12)
 				whichColor = CardColour.GREEN;
-			if (maxLoc == 13)
+			if (hot == 13)
 				whichColor = CardColour.WHITE;
-			if (maxLoc == 14)
+			if (hot == 14)
 				whichColor = CardColour.BLUE;
 			return new TellColour((agentID + 1) % 2, whichColor);
 		} else {
-			return new TellValue((agentID + 1) % 2, maxLoc - 14);
+			return new TellValue((agentID + 1) % 2, hot - 14);
 		}
 
 	}
