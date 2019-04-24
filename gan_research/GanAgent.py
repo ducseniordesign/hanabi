@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 import keras
-import math
 import numpy as np
-from keras.models import Sequential
-from keras.layers import Dense, Activation
 
 # receive 571 '1's or '0's on stdin
 # print 20 '1's or '0's on stdout
