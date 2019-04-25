@@ -296,11 +296,11 @@ public class GameRunner {
     		}
     	}
     	// Now that we have the discard count, we can put this info in the data point vector
-    	vectorizedDiscards(dataPoint, 85, redDiscards);
-    	vectorizedDiscards(dataPoint, 95, orangeDiscards);
-    	vectorizedDiscards(dataPoint, 105, greenDiscards);
-    	vectorizedDiscards(dataPoint, 115, whiteDiscards);
-    	vectorizedDiscards(dataPoint, 125, blueDiscards);
+    	vectorizedDiscards(dataPoint, 84, redDiscards);
+    	vectorizedDiscards(dataPoint, 94, orangeDiscards);
+    	vectorizedDiscards(dataPoint, 104, greenDiscards);
+    	vectorizedDiscards(dataPoint, 114, whiteDiscards);
+    	vectorizedDiscards(dataPoint, 124, blueDiscards);
     }
     
     private void vectorizeObservedCard (Hand hand, int cardPos, int begin, int[] dataPoint) {
@@ -347,53 +347,53 @@ public class GameRunner {
      *
      */
     private void basicGameState(GameState state, int[] dataPoint, int[][][][] possibleCards) {
-    	// Lives left - Bits 1 to 4
+    	// Lives left - Bits 0 to 3
     	int lives = state.getLives();
-    	for (int i = 1; i < 5; i++) {
+    	for (int i = 0; i < 4; i++) {
     		if (i <= lives) {
     			dataPoint[i] = 1;
     		} else {
     			dataPoint[i] = 0;
     		}
     	}
-    	// Hints left - Bits 5 to 13
+    	// Hints left - Bits 4 to 12
     	int hints = state.getInfomation();
     	for (int i = 0; i < 9; i++) {
     		if (i <= hints) {
-    			dataPoint[5 + i] = 1;
+    			dataPoint[4 + i] = 1;
     		} else {
-    			dataPoint[5 + i] = 0;
+    			dataPoint[4 + i] = 0;
     		}
     	}
-    	// Deck size remaining - Bits 14 to 54
+    	// Deck size remaining - Bits 13 to 53
     	int deckSize = state.getDeck().getCardsLeft();
     	for (int i = 0; i < 41; i++) {
     		if (i <= deckSize) {
-    			dataPoint[14 + i] = 1;
+    			dataPoint[13 + i] = 1;
     		} else {
-    			dataPoint[14 + i] = 0;
+    			dataPoint[13 + i] = 0;
     		}
     	}
     	
     	// Red cards played on table - Bits 55 to 60
-    	getCardsPlayed(dataPoint, 55, 60, CardColour.RED);
+    	getCardsPlayed(dataPoint, 54, 59, CardColour.RED);
     	// Orange cards played on table - Bits 55 to 60
-    	getCardsPlayed(dataPoint, 61, 66, CardColour.ORANGE);
+    	getCardsPlayed(dataPoint, 60, 65, CardColour.ORANGE);
     	// Green cards played on table - Bits 61 to 66
-    	getCardsPlayed(dataPoint, 67, 72, CardColour.GREEN);
+    	getCardsPlayed(dataPoint, 66, 71, CardColour.GREEN);
     	// White cards played on table - Bits 67 to 72
-    	getCardsPlayed(dataPoint, 73, 78, CardColour.WHITE);
+    	getCardsPlayed(dataPoint, 72, 77, CardColour.WHITE);
     	// Blue cards played on table - Bits 73 to 78
-    	getCardsPlayed(dataPoint, 79, 84, CardColour.BLUE);
+    	getCardsPlayed(dataPoint, 78, 83, CardColour.BLUE);
     	
     	// Get discarded cards
     	getDiscardedCards(dataPoint);
     	
     	// Get observed cards of other players
-    	getObservedCard((nextPlayer + 1) % players.length, 135, dataPoint);
+    	getObservedCard((nextPlayer + 1) % players.length, 134, dataPoint);
     	
     	// Push the possible cards vector onto the data point as well
-    	int curr = 260;
+    	int curr = 259;
     	// Possible cards for self
     	for (int card = 0; card < 5; card++) {
 			for (int colour = 0; colour < 5; colour++) {
@@ -661,53 +661,41 @@ public class GameRunner {
         			}
         		}
         	}
-            // Random noise for this game, Uniform randomness
-            Random r = new Random();
-            r.setSeed(System.currentTimeMillis() / 1000L);
-            int[] randomNoise = new int[10];
-            for (int i = 0; i < 10; i++) {
-            	randomNoise[i] = r.nextInt(2);
-            }
             while (!state.isGameOver()) {
                 try {
-                	int[] dataPoint = new int[592]; // Array to hold the bits of this data point
-                	dataPoint[0] = nextPlayer; // 2 - person game, next player is 0 or 1
+                	int[] dataPoint = new int[581]; // Array to hold the bits of this data point
                     writeState(state);
                     basicGameState(state, dataPoint, possibleCards);
                     // Process the action last made by the previous agent
-                    processAction(dataPoint, possibleCards, true, false, 510);
-                    // Adding in the random noise - Uniform randomness
-                    for (int i = 562; i < 572; i++) {
-                    	dataPoint[i] = randomNoise[i-562];
-                    }
+                    processAction(dataPoint, possibleCards, true, false, 509);
                     // Set up the input for the Ganabi agent
-                    ganabiAgentInput = new int[571];
-                    for (int i = 0; i < 571; i++) {
+                    ganabiAgentInput = new int[561];
+                    for (int i = 0; i < 561; i++) {
                     	ganabiAgentInput[i] = dataPoint[i];
                     }
                     nextMove();
-                    processAction(dataPoint, possibleCards, false, true, 572);
+                    processAction(dataPoint, possibleCards, false, true, 561);
                     // Write to file the data point
-//                    FileWriter output = null;
-//                    try {
-//                    	output= new FileWriter("flatmc.txt", true);
-//                    	BufferedWriter writer=new BufferedWriter(output);
-//                    	for (int i = 0; i < 592; i++) {
-//                    		String ss = String.valueOf(dataPoint[i]);
-//                    		writer.append(ss);
-//                    	}
-//                    	writer.close();
-//                    } catch (Exception e) {
-//                    	logger.warn("File write error - Can't write");
-//                    } finally {
-//                    	if (output != null) {
-//                    		try {
-//                    			output.close();
-//                    		} catch (IOException e) {
-//                    			logger.warn("File write error - Can't flush and close");
-//                    		}
-//                    	}
-//                    }
+                    FileWriter output = null;
+                    try {
+                    	output= new FileWriter("vdb-paper.txt", true);
+                    	BufferedWriter writer=new BufferedWriter(output);
+                    	for (int i = 0; i < 581; i++) {
+                    		String ss = String.valueOf(dataPoint[i]);
+                    		writer.append(ss);
+                    	}
+                    	writer.close();
+                    } catch (Exception e) {
+                    	logger.warn("File write error - Can't write");
+                    } finally {
+                    	if (output != null) {
+                    		try {
+                    			output.close();
+                    		} catch (IOException e) {
+                    			logger.warn("File write error - Can't flush and close");
+                    		}
+                    	}
+                    }
                 } catch (RulesViolation rv) {
                     logger.warn("got rules violation when processing move", rv);
                     strikes++;
@@ -720,26 +708,26 @@ public class GameRunner {
                 }
             }
             // Append a delimiter line
-//            FileWriter output = null;
-//            try {
-//            	output= new FileWriter("flatmc.txt", true);
-//            	BufferedWriter writer=new BufferedWriter(output);
-//            	for (int i = 0; i < 592; i++) {
-//            		String ss = "-";
-//            		writer.append(ss);
-//            	}
-//            	writer.close();
-//            } catch (Exception e) {
-//            	logger.warn("File write error - Can't write");
-//            } finally {
-//            	if (output != null) {
-//            		try {
-//            			output.close();
-//            		} catch (IOException e) {
-//            			logger.warn("File write error - Can't flush and close");
-//            		}
-//            	}
-//            }
+            FileWriter output = null;
+            try {
+            	output= new FileWriter("vdb-paper.txt", true);
+            	BufferedWriter writer=new BufferedWriter(output);
+            	for (int i = 0; i < 581; i++) {
+            		String ss = "-";
+            		writer.append(ss);
+            	}
+            	writer.close();
+            } catch (Exception e) {
+            	logger.warn("File write error - Can't write");
+            } finally {
+            	if (output != null) {
+            		try {
+            			output.close();
+            		} catch (IOException e) {
+            			logger.warn("File write error - Can't flush and close");
+            		}
+            	}
+            }
             return new GameStats(gameID, players.length, state.getScore(), state.getLives(), moves, state.getInfomation(), strikes);
         } catch (Exception ex) {
             logger.error("the game went bang", ex);

@@ -93,9 +93,9 @@ public class App {
         
         // For the purpose of getting training data, game statistics is not needed for now, 
         // so we will be just running the game here and logging the data into a file
-        for (int i = 0; i < 1; i++) {
+        for (int i = 0; i < 10000; i++) {
         	long seed = r.nextLong();
-        	playMixed("ganabi", "ganabi", seed);
+        	playMixed("vdb-paper", "vdb-paper", seed);
         	System.out.print("Done with game number ");
         	System.out.println(i);
         }
