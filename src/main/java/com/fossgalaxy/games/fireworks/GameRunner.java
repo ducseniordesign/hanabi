@@ -418,6 +418,29 @@ public class GameRunner {
     	
     }
     
+    private void getDeckInfo (int begin, int[] dataPoint) {
+    	List<Card> deck = state.getDeck().toList();
+    	for (Card card : deck) {
+        	if (card == null) return;
+        	if (card.colour == CardColour.RED) {
+    			dataPoint[begin + card.value - 1] = 1;
+    		}
+    		if (card.colour == CardColour.ORANGE) {
+    			dataPoint[begin + 5 + card.value - 1] = 1;
+    		}
+    		if (card.colour == CardColour.GREEN) {
+    			dataPoint[begin + 10 + card.value - 1] = 1;
+    		}
+    		if (card.colour == CardColour.WHITE) {
+    			dataPoint[begin + 15 + card.value - 1] = 1;
+    		}
+    		if (card.colour == CardColour.BLUE) {
+    			dataPoint[begin + 20 + card.value - 1] = 1;
+    		}
+    		begin += 25; // Move to next card
+    	}
+    }
+    
     private int colourToNumber(CardColour colour) {
     	// Convert a colour into a number, for ease of calculation later on
     	if (colour == CardColour.RED) return 0; 
@@ -663,11 +686,15 @@ public class GameRunner {
         	}
             while (!state.isGameOver()) {
                 try {
-                	int[] dataPoint = new int[581]; // Array to hold the bits of this data point
+                	int[] dataPoint = new int[1731]; // Array to hold the bits of this data point
                     writeState(state);
                     basicGameState(state, dataPoint, possibleCards);
                     // Process the action last made by the previous agent
                     processAction(dataPoint, possibleCards, true, false, 509);
+                    // Process hand info for self - necessary for forward model
+                    getObservedCard(nextPlayer, 581, dataPoint);
+                    // Process deck info - necessary for forward model 
+                    getDeckInfo(706, dataPoint);
                     // Set up the input for the Ganabi agent
                     ganabiAgentInput = new int[561];
                     for (int i = 0; i < 561; i++) {
@@ -680,7 +707,7 @@ public class GameRunner {
                     try {
                     	output= new FileWriter("vdb-paper.txt", true);
                     	BufferedWriter writer=new BufferedWriter(output);
-                    	for (int i = 0; i < 581; i++) {
+                    	for (int i = 0; i < 1731; i++) {
                     		String ss = String.valueOf(dataPoint[i]);
                     		writer.append(ss);
                     	}
@@ -712,7 +739,7 @@ public class GameRunner {
             try {
             	output= new FileWriter("vdb-paper.txt", true);
             	BufferedWriter writer=new BufferedWriter(output);
-            	for (int i = 0; i < 581; i++) {
+            	for (int i = 0; i < 1731; i++) {
             		String ss = "-";
             		writer.append(ss);
             	}
