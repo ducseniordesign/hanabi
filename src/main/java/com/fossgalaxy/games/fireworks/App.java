@@ -205,7 +205,11 @@ public class App {
         // Now get the action
         Action action = getAction(input, 561, otherPlayer);
         if (!action.isLegal(playerBit, state)) {
-            throw new RulesViolation(action);
+        	// Illegal action, print all 0s
+        	for (int i = 0; i < 1735; i++) {
+            	System.out.print(0);
+            }
+            System.exit(1);
         }
         GameState lastState = state.getCopy(); // Remember the last state
         action.apply(playerBit, state);
@@ -224,25 +228,8 @@ public class App {
         // Process new deck info
         Vectorization.getDeckInfo(706, output, state);
         // Output
-        FileWriter fw = null;
-        try {
-        	fw = new FileWriter("output.txt", false);
-        	BufferedWriter writer=new BufferedWriter(fw);
-        	for (int i = 0; i < 1735; i++) {
-        		String charToPrint = String.valueOf(output[i]);
-        		writer.append(charToPrint);
-        	}
-        	writer.close();
-        } catch (Exception e) {
-        	System.err.println("File write error - Can't write");
-        } finally {
-        	if (fw != null) {
-        		try {
-        			fw.close();
-        		} catch (IOException e) {
-        			System.err.println("File write error - Can't flush and close");
-        		}
-        	}
+        for (int i = 0; i < 1735; i++) {
+        	System.out.print(output[i]);
         }
         
         
