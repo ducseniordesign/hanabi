@@ -54,7 +54,7 @@ public class BasicState implements GameState {
     /**
      * The cards remaining in the game, with their associated ordering (if known)
      */
-    private final Deck deck;
+    private Deck deck;
 
     /**
      * The current state of the table
@@ -293,6 +293,10 @@ public class BasicState implements GameState {
     public Deck getDeck() {
         return deck;
     }
+    
+    public void setDeck(Deck newDeck) {
+    	deck = newDeck;
+    }
 
     /**
      * Return a read only list of discarded cards
@@ -477,6 +481,10 @@ public class BasicState implements GameState {
     @Override
     public int getMovesLeft(){
         return movesLeft;
+    }
+    
+    public void setMovesLeft(int movesLeft) {
+    	this.movesLeft = movesLeft;
     }
 
     /**
