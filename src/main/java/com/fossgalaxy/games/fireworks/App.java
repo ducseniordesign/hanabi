@@ -49,7 +49,6 @@ public class App {
 
         double sum = 0;
         int games = 0;
-        System.out.println("Start");
 
         Random r = new Random();
 
