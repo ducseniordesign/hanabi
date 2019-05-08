@@ -281,12 +281,13 @@ public class GameRunner {
                     // Write to file the data point
                     FileWriter output = null;
                     try {
-                    	output= new FileWriter("vdb-paper.txt", true);
+                    	output= new FileWriter("internal.txt", true);
                     	BufferedWriter writer=new BufferedWriter(output);
                     	for (int i = 0; i < 1735; i++) {
                     		String ss = String.valueOf(dataPoint[i]);
                     		writer.append(ss);
                     	}
+                    	writer.append('\n');
                     	writer.close();
                     } catch (Exception e) {
                     	logger.warn("File write error - Can't write");
@@ -313,7 +314,7 @@ public class GameRunner {
             // Append a delimiter line
             FileWriter output = null;
             try {
-            	output= new FileWriter("vdb-paper.txt", true);
+            	output= new FileWriter("internal.txt", true);
             	BufferedWriter writer=new BufferedWriter(output);
             	for (int i = 0; i < 1735; i++) {
             		String ss = "-";
