@@ -12,8 +12,8 @@ import com.fossgalaxy.games.fireworks.utils.SetupUtils;
 import com.fossgalaxy.stats.BasicStats;
 import com.fossgalaxy.stats.StatsSummary;
 
+
 import java.util.Random;
-import java.io.*;
 
 /**
  * Hello world!
@@ -40,7 +40,6 @@ public class App {
 
         double sum = 0;
         int games = 0;
-        System.out.println("Start");
 
         Random r = new Random();
 
@@ -95,11 +94,10 @@ public class App {
         // so we will be just running the game here and logging the data into a file
         for (int i = 0; i < 1; i++) {
         	long seed = r.nextLong();
-        	playMixed("ganabi", "ganabi", seed);
+        	playMixed("internal", "internal", seed);
         	System.out.print("Done with game number ");
         	System.out.println(i);
-        }
-        
+        }     
 
 //        for (int i=0; i<seeds.length; i++) {
 //            seeds[i] = r.nextLong();
